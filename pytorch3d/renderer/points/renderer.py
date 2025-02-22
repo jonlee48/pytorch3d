@@ -60,6 +60,13 @@ class PointsRenderer(nn.Module):
         # to a function of the weights.
         r = self.rasterizer.raster_settings.radius
 
+        # PointRenderer rasterizer per-point radius bug fix
+        # https://github.com/facebookresearch/pytorch3d/issues/1111
+        if isinstance(r, torch.Tensor):
+            idx = fragments.idx.long()
+            r = r[0][idx.reshape(-1)].reshape(idx.shape)
+            r = r.permute(0,3,1,2)
+
         dists2 = fragments.dists.permute(0, 3, 1, 2)
         weights = 1 - dists2 / (r * r)
         images = self.compositor(
